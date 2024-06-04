@@ -5,6 +5,8 @@ from sklearn.preprocessing import LabelEncoder,OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+import statsmodels.formula.api as sm
 data_set = pd.read_csv('50_Startups.csv')
 """
  R&D Spend  Administration  Marketing Spend       State     Profit
@@ -51,3 +53,16 @@ sc_y.fit(indep_train)
 indep_train = sc_y.transform(indep_train)
 indep_test = sc_y.transform(indep_test)
 
+#創建線性回歸器
+linear_regression = LinearRegression()
+#回歸器擬合我們的訓練集
+linear_regression.fit(dep_train,indep_train)
+indep_data_pred = linear_regression.predict(dep_test)
+#把我們的特徵縮放進行反項縮放,把預測的跟測試集裡面的資料型比對
+#因變量測試集的反向特徵縮放回原始數據
+indep_test = sc_y.inverse_transform(indep_test)
+#預測的因變量測試集的反向特徵縮放回原始數據
+indep_data_pred = sc_y.inverse_transform(indep_data_pred)
+
+dep_train = sc_x.inverse_transform(dep_train)
+dep_train = np.append()
