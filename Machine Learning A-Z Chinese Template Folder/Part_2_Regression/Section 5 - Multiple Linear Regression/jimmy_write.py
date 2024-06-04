@@ -63,6 +63,3 @@ indep_data_pred = linear_regression.predict(dep_test)
 indep_test = sc_y.inverse_transform(indep_test)
 #預測的因變量測試集的反向特徵縮放回原始數據
 indep_data_pred = sc_y.inverse_transform(indep_data_pred)
-
-dep_train = sc_x.inverse_transform(dep_train)
-dep_train = np.append()
