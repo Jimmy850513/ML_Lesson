@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
+
 data_set = pd.read_csv('50_Startups.csv')
 """
  R&D Spend  Administration  Marketing Spend       State     Profit
