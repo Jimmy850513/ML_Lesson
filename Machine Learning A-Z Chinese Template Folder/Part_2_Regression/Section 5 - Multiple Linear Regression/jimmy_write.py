@@ -6,7 +6,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
-import statsmodels.formula.api as sm
+import statsmodels.api as sm
 data_set = pd.read_csv('50_Startups.csv')
 """
  R&D Spend  Administration  Marketing Spend       State     Profit
@@ -39,27 +39,55 @@ dep_data = dep_data[:,1:6]
 dep_train,dep_test,indep_train,indep_test = train_test_split(dep_data,indep_data,
                                                              test_size=0.2,train_size=0.8,
                                                              random_state=0)
-
-sc_x = StandardScaler()
-sc_x.fit(dep_train)
-dep_train = sc_x.transform(dep_train)
-dep_test = sc_x.transform(dep_test)
-
-#因為因變量唯一為陣列,但特徵縮放只能放在二維陣列,所以我們要先進行轉換
-indep_train = np.array(indep_train).reshape(-1,1)
-indep_test = np.array(indep_test).reshape(-1,1)
-sc_y = StandardScaler()
-sc_y.fit(indep_train)
-indep_train = sc_y.transform(indep_train)
-indep_test = sc_y.transform(indep_test)
-
 #創建線性回歸器
 linear_regression = LinearRegression()
 #回歸器擬合我們的訓練集
 linear_regression.fit(dep_train,indep_train)
 indep_data_pred = linear_regression.predict(dep_test)
 #把我們的特徵縮放進行反項縮放,把預測的跟測試集裡面的資料型比對
-#因變量測試集的反向特徵縮放回原始數據
-indep_test = sc_y.inverse_transform(indep_test)
-#預測的因變量測試集的反向特徵縮放回原始數據
-indep_data_pred = sc_y.inverse_transform(indep_data_pred)
+#先畫出用一般all-in的圖
+
+def backward_elimination(X, y, significance_level=0.05):
+    num_features = X.shape[1]
+    for i in range(0, num_features):
+        regressor_OLS = sm.OLS(y, X).fit()
+        max_pvalue = max(regressor_OLS.pvalues)
+        if max_pvalue > significance_level:
+            max_pvalue_index = np.where(regressor_OLS.pvalues == max_pvalue)[0][0]
+            X = np.delete(X, max_pvalue_index, axis=1)
+    return X
+
+#加上b0*全部都是1陣列的值,因為反向淘汰沒有這個b0係數
+dep_train = np.append(np.ones((40,1)),dep_train,axis=1)
+
+dep_opt = backward_elimination(dep_train,indep_train)
+
+print(dep_opt.astype(int))
+#創建完我們的線性回歸器
+regresser_OLS = sm.OLS(endog=indep_train,exog=dep_opt)
+#擬合回歸器
+regresser_OLS = regresser_OLS.fit()
+
+dep_test = np.append(np.ones((10,1)),dep_test,axis=1)
+
+Y_pred2 = regresser_OLS.predict(dep_test[:,[0,3]])
+
+"""
+[104667.24473855 134150.43724489 135208.15316323  72170.15800112
+ 179090.58942745 109824.67436935  65644.17001221 100481.51709069
+ 111431.6872018  169438.29295526]
+
+"""
+
+# plt.figure(figsize=(10, 6))
+
+# plt.scatter(indep_test, Y_pred2, color='blue', label='Predictions without feature selection')
+# plt.scatter(indep_test, Y_pred2, color='red', label='Predictions with feature selection')
+# plt.plot([min(indep_test), max(indep_test)], [min(indep_test), max(indep_test)], color='gray', linestyle='--')
+
+# plt.title('Comparison of Predictions with and without Feature Selection')
+# plt.xlabel('Actual Values')
+# plt.ylabel('Predicted Values')
+# plt.legend()
+# plt.grid(True)
+# plt.show()
